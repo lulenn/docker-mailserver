@@ -1,0 +1,41 @@
+version: '2'
+
+services:
+  mail:
+    image: mail:latest
+    container_name: mail
+    ports:
+    - "25:25"
+    - "143:143"
+    - "587:587"
+    - "993:993"
+    volumes:
+    - maildata:/var/mail
+    - mailstate:/var/mail-state
+    - ./config/:/tmp/docker-mailserver/
+    environment:
+    - ENABLE_LDAP=1
+    - LDAP_SERVER_HOST=10.19.132.183:30389
+    - LDAP_SEARCH_BASE=dc=enncloud,dc=com
+    - LDAP_BIND_DN=cn=admin,dc=enncloud,dc=com
+    - LDAP_BIND_PW=pass@rrr123
+    - LDAP_QUERY_FILTER_USER="(uid=%u)"
+    - LDAP_QUERY_FILTER_GROUP="(&(cn=%u)(objectClass=groupOfNames))"
+    - LDAP_QUERY_FILTER_ALIAS="(sn=%u)"
+    - SSL_TYPE=letsencrypt
+    - OVERRIDE_HOSTNAME=mail.he2.io
+    - ENABLE_SASLAUTHD=1
+    - SASLAUTHD_LDAP_SERVER=10.19.132.183:30389
+    - SASLAUTHD_LDAP_BIND_DN=cn=admin,dc=enncloud,dc=com
+    - SASLAUTHD_LDAP_PASSWORD=pass@rrr123
+    - SASLAUTHD_LDAP_SEARCH_BASE=dc=enncloud,dc=com
+
+    cap_add:
+    - NET_ADMIN
+    restart: always
+
+volumes:
+  maildata:
+    driver: local
+  mailstate:
+    driver: local

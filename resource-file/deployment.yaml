@@ -1,0 +1,135 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: mail-server
+  name: mail-server
+  namespace: lule
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mail-server
+  template:
+    metadata:
+      labels:
+        app: mail-server
+    spec:
+      containers:
+      - env:
+        - name: SSL_CERT_PATH
+          value: /tmp/ssl/public.pem
+        - name: SSL_KEY_PATH
+          value: /tmp/ssl/private.key
+        - name: SSL_TYPE
+          value: manual
+        - name: ENABLE_LDAP
+          value: "1"
+        - name: LDAP_SERVER_HOST
+          value: 10.19.248.200:30389
+        - name: LDAP_SEARCH_BASE
+          value: dc=enncloud,dc=com
+        - name: LDAP_BIND_DN
+          value: cn=admin,dc=enncloud,dc=com
+        - name: LDAP_BIND_PW
+          value: pass@rrr123
+        - name: VIRUSMAILS_DELETE_DELAY
+          value: "120"
+        - name: OVERRIDE_HOSTNAME
+          value: mail.he2.io
+        - name: LDAP_QUERY_FILTER_USER
+          value: (uid=%u)
+        - name: LDAP_QUERY_FILTER_GROUP
+          value: (&(cn=%u)(objectClass=groupOfNames))
+        - name: LDAP_QUERY_FILTER_ALIAS
+          value: (sn=%u)
+        - name: DOVECOT_PASS_FILTER
+          value: (&(objectClass=person)(|(uid=%n)(sn=%n)))
+        - name: DOVECOT_USER_FILTER
+          value: (&(objectClass=person)(|(uid=%n)(sn=%n)))
+        - name: ENABLE_POSTGREY
+          value: "0"
+        image: 10.19.248.12:30100/enncloud/mail:v6
+        imagePullPolicy: IfNotPresent
+        name: mail
+        ports:
+        - containerPort: 143
+          name: imap
+          protocol: TCP
+        - containerPort: 25
+          name: smtp
+          protocol: TCP
+        - containerPort: 587
+          name: smtp-ssl
+          protocol: TCP
+        - containerPort: 993
+          name: imap-ssl
+          protocol: TCP
+        - containerPort: 110
+          name: pop
+          protocol: TCP
+        - containerPort: 995
+          name: pop-ssl
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 1
+            memory: 1Gi
+          requests:
+            cpu: 0.1
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /var/mail
+          name: maildata
+        - mountPath: /var/mail-state
+          name: mailstate
+        - mountPath: /tmp/ssl
+          name: mailssl
+      nodeName: 10.19.248.40
+      volumes:
+      - name: maildata
+        rbd:
+          fsType: xfs
+          image: mails-data
+          keyring: /etc/ceph/keyring
+          monitors:
+          - 10.19.248.27:6789
+          - 10.19.248.28:6789
+          - 10.19.248.29:6789
+          - 10.19.248.30:6789
+          - 10.19.248.31:6789
+          pool: 4tools-pool
+          secretRef:
+            name: ceph-secret
+          user: admin
+      - name: mailstate
+        rbd:
+          fsType: xfs
+          image: mails-state
+          keyring: /etc/ceph/keyring
+          monitors:
+          - 10.19.248.27:6789
+          - 10.19.248.28:6789
+          - 10.19.248.29:6789
+          - 10.19.248.30:6789
+          - 10.19.248.31:6789
+          pool: 4tools-pool
+          secretRef:
+            name: ceph-secret
+          user: admin
+      - name: mailssl
+        rbd:
+          fsType: xfs
+          image: mails-ssl
+          keyring: /etc/ceph/keyring
+          monitors:
+          - 10.19.248.27:6789
+          - 10.19.248.28:6789
+          - 10.19.248.29:6789
+          - 10.19.248.30:6789
+          - 10.19.248.31:6789
+          pool: 4tools-pool
+          secretRef:
+            name: ceph-secret
+          user: admin
+

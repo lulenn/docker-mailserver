@@ -414,7 +414,7 @@ function _setup_postfix_hostname() {
 	notify 'task' 'Applying hostname and domainname to Postfix'
 
 	notify 'inf' "Applying hostname to /etc/postfix/main.cf"
-	postconf -e "myhostname = $HOSTNAME"
+	# postconf -e "myhostname = $HOSTNAME"
 	postconf -e "mydomain = $DOMAINNAME"
 }
 
